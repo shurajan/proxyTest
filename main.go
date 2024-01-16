@@ -1,11 +1,13 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"golang.org/x/net/proxy"
 	"io"
 	"log"
+	"net"
 	"net/http"
 )
 
@@ -26,9 +28,14 @@ func main() {
 		log.Fatal(err)
 	}
 
+	dialContext := func(ctx context.Context, network, address string) (net.Conn, error) {
+		return dialer.Dial(network, address)
+	}
+
 	client := &http.Client{
 		Transport: &http.Transport{
-			Dial: dialer.Dial,
+			DialContext:       dialContext,
+			DisableKeepAlives: true,
 		},
 	}
 
@@ -37,6 +44,7 @@ func main() {
 		log.Fatal(err)
 	}
 	defer r.Body.Close()
+
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
 		log.Fatal(err)
